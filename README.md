@@ -54,6 +54,30 @@
 - **🧹 界面精简**：移除"系统设置 - 关于"卡片。
 - **🛠️ 本地开发**：`mail-worker` 使用 `wrangler dev --config wrangler-dev.toml --local` 本地模式启动；首次建库访问 `GET /api/init/<jwt_secret>`（secret 见 `mail-worker/wrangler-dev.toml` 的 `vars.jwt_secret`）；可用 `doc/seed-emails.sql` 灌入测试邮件数据。
 
+## Cloudflare 部署
+
+生产部署参考上游方式：`wrangler login` 授权 → 创建 D1 + KV → `wrangler deploy` → 初始化数据库。
+
+```bash
+# 1. 授权（浏览器 OAuth）
+cd mail-worker
+wrangler login
+
+# 2. 创建资源（拿到真实 ID 后填入 wrangler.toml）
+wrangler d1 create yy-mail          # D1 数据库
+wrangler kv namespace create yy-mail-kv   # KV 命名空间
+
+# 3. 部署（自动执行 [build]：构建 mail-vue 前端到 mail-worker/dist）
+wrangler deploy
+
+# 4. 初始化线上数据库（secret 见 wrangler.toml 的 vars.jwt_secret）
+curl https://<worker域名>/api/init/<jwt_secret>
+```
+
+当前实例（`eyuan520-a11y` 账号）：Worker `yy-mail`，D1 `yy-mail`（`f02b3ab4-1e4a-4e2b-a4db-64991b1a8342`），KV `yy-mail-kv`（`5facb3d8e0404055bdce2b326679ef6a`），访问地址 https://yy-mail.eyuan520-757.workers.dev 。`vars.domain` 已配置 `z-y.ren`、`seller-shopee.cn`；两域名的 Email Routing 捕获规则此前分别指向其他 Worker，如需本实例收信，到对应域名的 Email Routing 后台把 Catch-all 规则改指 `yy-mail` 即可。
+
+部署后首次使用：访问站点 → 用 `vars.admin` 指定的邮箱（如 `admin@z-y.ren`）注册账号，该账号即成为管理员。
+
 ## 功能介绍
 
 - **💰 低成本使用**： 可部署到 Cloudflare Workers 降低服务器成本
