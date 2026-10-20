@@ -8,6 +8,8 @@ import { emailListColumns, emailBriefColumns } from '../lib/email-list-columns';
 import { isDel } from '../const/entity-const';
 import attService from "./att-service";
 import { t } from '../i18n/i18n'
+import userContext from '../security/user-context';
+import permService from './perm-service';
 const starService = {
 
 	async add(c, params, userId) {
@@ -16,7 +18,12 @@ const starService = {
 		if (!email) {
 			throw new BizError(t('starNotExistEmail'));
 		}
-		if (email.userId !== userId) {
+		// 星标授权对齐"邮件可见范围"，而非仅限所有者：
+		//   1) 自己的邮件（收件箱/发件箱，user_id === userId）
+		//   2) 分配给自己的邮件（我的邮件，assigned_user_id === userId）
+		//   3) 拥有"全部邮件"查询权限或管理员（可查看所有邮件，含他人邮件与无人邮件 user_id=0）
+		// /star/add 仅需登录态，保留该校验以避免普通用户猜 emailId 再经 /star/list 越权读取他人邮件元数据。
+		if (email.userId !== userId && email.assignedUserId !== userId && !(await this.canViewAllEmail(c, userId))) {
 			throw new BizError(t('starNotExistEmail'));
 		}
 		const exist = await orm(c).select().from(star).where(
@@ -30,6 +37,15 @@ const starService = {
 		}
 
 		await orm(c).insert(star).values({ userId, emailId }).run();
+	},
+
+	async canViewAllEmail(c, userId) {
+		const user = userContext.getUser(c);
+		if (user && c.env.admin && user.email === c.env.admin) {
+			return true;
+		}
+		const permKeys = await permService.userPermKeys(c, userId);
+		return permKeys.includes('all-email:query');
 	},
 
 	async cancel(c, params, userId) {
