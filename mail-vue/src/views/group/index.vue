@@ -68,7 +68,7 @@ const scrollbarRef = ref(null)
 const showDialog = ref(false)
 const saving = ref(false)
 const dialogTitle = ref('')
-const form = reactive({groupId: 0, name: '', color: ''})
+const form = reactive({groupId: 0, name: '', color: null})
 const params = reactive({name: ''})
 
 const predefineColors = [
@@ -112,7 +112,7 @@ function openAdd() {
 function openEdit(row) {
   form.groupId = row.groupId
   form.name = row.name
-  form.color = row.color || ''
+  form.color = row.color || null
   dialogTitle.value = t('editGroup')
   showDialog.value = true
 }
@@ -120,7 +120,7 @@ function openEdit(row) {
 function resetForm() {
   form.groupId = 0
   form.name = ''
-  form.color = ''
+  form.color = null
 }
 
 function submit() {
