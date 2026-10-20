@@ -358,6 +358,7 @@ const en = {
     assignSuccess: 'Assigned successfully',
     unassigned: 'Unassigned',
     groupList: 'Group List',
+    group: 'Group',
     groupName: 'Group Name',
     groupColor: 'Group Color',
     addGroup: 'Add Group',

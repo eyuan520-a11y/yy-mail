@@ -358,6 +358,7 @@ const zh = {
     assignSuccess: '分配成功',
     unassigned: '未分配',
     groupList: '分组列表',
+    group: '分组',
     groupName: '分组名称',
     groupColor: '分组颜色',
     addGroup: '添加分组',

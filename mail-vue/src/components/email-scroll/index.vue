@@ -246,6 +246,14 @@
               </div>
             </template>
           </el-dropdown-item>
+          <el-dropdown-item v-if="props.type === 'all-email'" @click="openGroup([rightClickEmail])">
+            <template #default>
+              <div class="right-dropdown-item">
+                <Icon icon="fluent:group-24-regular" width="20" height="20" />
+                <span>{{t('group')}}</span>
+              </div>
+            </template>
+          </el-dropdown-item>
           <el-dropdown-item @click="rightDelete(rightClickEmail.emailId)">
             <template #default>
               <div class="right-dropdown-item">
