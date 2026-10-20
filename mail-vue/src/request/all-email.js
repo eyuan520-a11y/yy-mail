@@ -26,6 +26,11 @@ export function assignEmail(data) {
 	return http.post('/allEmail/assign', data)
 }
 
+// 将邮件归入指定分组（groupId=0 表示取消分组）
+export function setGroup(data) {
+	return http.post('/allEmail/setGroup', data)
+}
+
 // 我的邮件：列出分配给当前登录用户的邮件
 export function myEmailList(params) {
 	return http.get('/allEmail/myList', {params: {...params}})

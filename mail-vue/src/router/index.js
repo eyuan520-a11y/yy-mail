@@ -61,6 +61,16 @@ const routes = [
                     menu: true
                 }
             },
+            {
+                path: '/group',
+                name: 'group',
+                component: () => import('@/views/group/index.vue'),
+                meta: {
+                    title: 'groupList',
+                    name: 'group',
+                    menu: true
+                }
+            },
         ]
 
     },

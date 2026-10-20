@@ -21,6 +21,9 @@
         <Icon v-perm="'all-email:query'" class="icon assign" icon="mynaui:user-check" width="20" height="20"
               v-if="props.type === 'all-email' && getSelectedMailsIds().length > 0"
               @click="openAssign(getSelectedMails())"/>
+        <Icon v-perm="'all-email:query'" class="icon group" icon="fluent:group-24-regular" width="20" height="20"
+              v-if="props.type === 'all-email' && getSelectedMailsIds().length > 0"
+              @click="openGroup(getSelectedMails())"/>
       </div>
 
       <div class="header-right">
@@ -113,6 +116,12 @@
                         <Icon icon="mynaui:user-check" width="18" height="18"/>
                       </span>
                       <span>{{ item.assignedUserEmail || t('unassigned') }}</span>
+                    </div>
+                    <div class="group" v-if="showGroup && item.groupName">
+                      <span>
+                        <Icon icon="fluent:group-24-regular" width="18" height="18"/>
+                      </span>
+                      <span :style="{ color: item.groupColor }">{{ item.groupName }}</span>
                     </div>
                   </div>
                 </div>
@@ -301,6 +310,10 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  showGroup: {
+    type: Boolean,
+    default: false
+  },
   allowStar: {
     type: Boolean,
     default: true
@@ -319,7 +332,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['jump', 'refresh-before', 'delete-draft', 'right-search', 'assign'])
+const emit = defineEmits(['jump', 'refresh-before', 'delete-draft', 'right-search', 'assign', 'group'])
 const {t} = useI18n()
 const settingStore = useSettingStore()
 const uiStore = useUiStore();
@@ -796,6 +809,10 @@ function openAssign(emails) {
   emit('assign', emails);
 }
 
+function openGroup(emails) {
+  emit('group', emails);
+}
+
 function getSelectedDraftsIds() {
   return emailList.filter(item => item.checked).map(item => item.draftId);
 }
@@ -1066,6 +1083,30 @@ function loadData() {
       max-width: 300px;
       min-width: 0;
       color: var(--el-color-primary);
+
+      @media (max-width: 1223px) {
+        max-width: 280px;
+      }
+
+      span:first-child {
+        position: relative;
+      }
+
+      span:last-child {
+        margin-left: 5px;
+        position: relative;
+        bottom: 3px;
+      }
+    }
+
+    .group {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      transition: all 300ms;
+      line-height: 12px;
+      max-width: 300px;
+      min-width: 0;
 
       @media (max-width: 1223px) {
         max-width: 280px;

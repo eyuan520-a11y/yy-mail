@@ -18,6 +18,11 @@ app.post('/allEmail/assign', async (c) => {
 	return c.json(result.ok());
 })
 
+app.post('/allEmail/setGroup', async (c) => {
+	await emailService.setGroup(c, await c.req.json());
+	return c.json(result.ok())
+})
+
 app.get('/allEmail/myList', async (c) => {
 	const data = await emailService.myList(c, c.req.query(), userContext.getUserId(c));
 	return c.json(result.ok(data));

@@ -5,6 +5,7 @@
                  :time-sort="params.timeSort"
                  :show-star="false"
                  show-user-info
+                 show-group
                  actionLeft="4px"
                  :show-account-icon="false"
                  :type="'my-email'"
@@ -45,6 +46,15 @@
           <el-option key="4" :label="$t('selectDeleted')" value="delete"/>
           <el-option key="4" :label="$t('noRecipientTitle')" value="noone"/>
         </el-select>
+        <el-select v-model="params.groupId" :placeholder="$t('groupName')" class="group-select" clearable @change="search">
+          <el-option :key="0" :label="$t('allGroups')" :value="null"/>
+          <el-option v-for="g in groups" :key="g.groupId" :label="g.name" :value="g.groupId">
+            <span class="group-opt">
+              <span class="color-dot" :style="{ background: g.color || '#dcdfe6' }"></span>
+              <span :style="{ color: g.color || 'inherit' }">{{ g.name }}</span>
+            </span>
+          </el-option>
+        </el-select>
         <Icon class="icon" icon="iconoir:search" @click="search" width="20" height="20"/>
         <Icon class="icon" @click="changeTimeSort" icon="material-symbols-light:timer-arrow-down-outline"
               v-if="params.timeSort === 0" width="28" height="28"/>
@@ -62,6 +72,7 @@ import {useEmailStore} from "@/store/email.js";
 import {
   myEmailList
 } from "@/request/all-email.js";
+import {groupList} from "@/request/group.js";
 import {Icon} from "@iconify/vue";
 import router from "@/router/index.js";
 import {useI18n} from 'vue-i18n';
@@ -83,8 +94,21 @@ const params = reactive({
   accountEmail: null,
   name: null,
   subject: null,
+  groupId: null,
   searchType: 'name'
 })
+
+const groups = ref([])
+
+function loadGroups() {
+  groupList({}).then(list => {
+    groups.value = list || []
+  }).catch(() => {
+    groups.value = []
+  })
+}
+
+loadGroups()
 
 function openSelect() {
   mySelect.value.toggleMenu()
@@ -111,6 +135,7 @@ function refreshBefore() {
   params.accountEmail = null
   params.name = null
   params.subject = null
+  params.groupId = null
   params.searchType = 'name'
 }
 
@@ -209,6 +234,29 @@ function getEmailList(emailId, size) {
   :deep(.el-select__wrapper) {
     min-height: 28px;
   }
+}
+
+.group-select {
+  margin-bottom: 2px;
+  width: 140px;
+
+  :deep(.el-select__wrapper) {
+    min-height: 28px;
+  }
+}
+
+.color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.group-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .input-with-select {

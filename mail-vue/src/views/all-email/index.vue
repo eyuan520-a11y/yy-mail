@@ -9,6 +9,7 @@
                  show-user-info
                  show-status
                  show-assigned
+                 show-group
                  actionLeft="4px"
                  :show-account-icon="false"
                  :time-sort="params.timeSort"
@@ -17,6 +18,7 @@
                  @refresh-before="refreshBefore"
                  @right-search="rightSearch"
                  @assign="openAssignDialog"
+                 @group="openGroupDialog"
                  :type="'all-email'"
 
     >
@@ -52,6 +54,15 @@
           <el-option key="2" :label="$t('sent')" value="send"/>
           <el-option key="4" :label="$t('selectDeleted')" value="delete"/>
           <el-option key="4" :label="$t('noRecipientTitle')" value="noone"/>
+        </el-select>
+        <el-select v-model="params.groupId" :placeholder="$t('groupName')" class="group-select" clearable @change="search">
+          <el-option :key="0" :label="$t('allGroups')" :value="null"/>
+          <el-option v-for="g in groups" :key="g.groupId" :label="g.name" :value="g.groupId">
+            <span class="group-opt">
+              <span class="color-dot" :style="{ background: g.color || '#dcdfe6' }"></span>
+              <span :style="{ color: g.color || 'inherit' }">{{ g.name }}</span>
+            </span>
+          </el-option>
         </el-select>
         <Icon class="icon" icon="iconoir:search" @click="search" width="20" height="20"/>
         <Icon class="icon" @click="changeTimeSort" icon="material-symbols-light:timer-arrow-down-outline"
@@ -98,6 +109,24 @@
         <el-button type="primary" :loading="assignLoading" @click="confirmAssign">{{ $t('confirm') }}</el-button>
       </template>
     </el-dialog>
+    <el-dialog v-model="groupDialogVisible" :title="$t('selectGroup')" width="360" @closed="closeGroupDialog">
+      <div class="assign-dialog">
+        <div class="assign-tip">{{ $t('groupTip', { count: groupEmails.length }) }}</div>
+        <el-select v-model="groupSelectId" filterable clearable :placeholder="$t('selectGroup')" class="assign-select">
+          <el-option :key="0" :label="$t('ungroup')" :value="0"/>
+          <el-option v-for="g in groups" :key="g.groupId" :label="g.name" :value="g.groupId">
+            <span class="group-opt">
+              <span class="color-dot" :style="{ background: g.color || '#dcdfe6' }"></span>
+              <span :style="{ color: g.color || 'inherit' }">{{ g.name }}</span>
+            </span>
+          </el-option>
+        </el-select>
+      </div>
+      <template #footer>
+        <el-button @click="closeGroupDialog">{{ $t('cancel') }}</el-button>
+        <el-button type="primary" :loading="groupLoading" @click="confirmGroup">{{ $t('confirm') }}</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -112,8 +141,10 @@ import {
   allEmailBatchDelete,
   allEmailLatest,
   assignEmail,
-  assignUserList
+  assignUserList,
+  setGroup
 } from "@/request/all-email.js";
+import {groupList} from "@/request/group.js";
 import {Icon} from "@iconify/vue";
 import router from "@/router/index.js";
 import {useI18n} from 'vue-i18n';
@@ -139,7 +170,18 @@ const clearLoading = ref(false)
 
 onMounted(() => {
   latest();
+  loadGroups();
 })
+
+const groups = ref([])
+
+function loadGroups() {
+  groupList({}).then(list => {
+    groups.value = list || []
+  }).catch(() => {
+    groups.value = []
+  })
+}
 
 const openSelect = () => {
   mySelect.value.toggleMenu()
@@ -152,6 +194,7 @@ const params = reactive({
   accountEmail: null,
   name: null,
   subject: null,
+  groupId: null,
   searchType: 'name'
 })
 
@@ -268,6 +311,46 @@ function confirmAssign() {
   })
 }
 
+const groupDialogVisible = ref(false)
+const groupLoading = ref(false)
+const groupSelectId = ref(null)
+const groupEmails = ref([])
+
+function openGroupDialog(emails) {
+  if (!emails || emails.length === 0) return
+  groupEmails.value = emails
+  groupSelectId.value = null
+  groupDialogVisible.value = true
+}
+
+function closeGroupDialog() {
+  groupDialogVisible.value = false
+  groupEmails.value = []
+  groupSelectId.value = null
+  groupLoading.value = false
+}
+
+function confirmGroup() {
+  if (groupLoading.value) return
+  // groupSelectId 为 null 表示取消分组
+  const gid = groupSelectId.value == null ? 0 : groupSelectId.value
+  groupLoading.value = true
+  setGroup({
+    emailIds: groupEmails.value.map(e => e.emailId).join(','),
+    groupId: gid
+  }).then(() => {
+    ElMessage({
+      message: t('groupSuccess'),
+      type: "success",
+      plain: true
+    })
+    closeGroupDialog()
+    sysEmailScroll.value.refreshList()
+  }).finally(() => {
+    groupLoading.value = false
+  })
+}
+
 function batchDelete() {
 
   if (clearLoading.value) return
@@ -320,6 +403,7 @@ function refreshBefore() {
   params.accountEmail = null
   params.name = null
   params.subject = null
+  params.groupId = null
   params.searchType = 'name'
 }
 
@@ -535,6 +619,29 @@ async function latest() {
   :deep(.el-select__wrapper) {
     min-height: 28px;
   }
+}
+
+.group-select {
+  margin-bottom: 2px;
+  width: 140px;
+
+  :deep(.el-select__wrapper) {
+    min-height: 28px;
+  }
+}
+
+.color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.group-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .input-with-select {

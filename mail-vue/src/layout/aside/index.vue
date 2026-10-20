@@ -54,6 +54,11 @@
           <Icon icon="fluent:mail-list-28-regular" width="22" height="22" />
           <span class="menu-name" style="margin-left: 15px">{{$t('allMail')}}</span>
         </el-menu-item>
+        <el-menu-item @click="router.push({name: 'group'})" index="group" v-perm="'group:query'"
+                      :class="route.meta.name === 'group' ? 'choose-item' : ''">
+          <Icon icon="fluent:group-24-regular" width="22" height="22" />
+          <span class="menu-name" style="margin-left: 15px">{{$t('groupList')}}</span>
+        </el-menu-item>
         <el-menu-item @click="router.push({name: 'role'})" index="setting" v-perm="'role:query'"
                       :class="route.meta.name === 'role' ? 'choose-item' : ''">
           <Icon icon="fluent:lock-closed-16-regular" width="22" height="22" />

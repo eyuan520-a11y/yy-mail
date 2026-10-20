@@ -33,6 +33,7 @@ const dbInit = {
 		await this.v3_2DB(c);
 		await this.v3_3DB(c);
 		await this.v3_4DB(c);
+		await this.v3_5DB(c);
 		await settingService.refresh(c);
 		return c.text('success');
 	},
@@ -68,6 +69,55 @@ const dbInit = {
 			]);
 		} catch (e) {
 			console.warn(`跳过字段：${e.message}`);
+		}
+	},
+
+	async v3_5DB(c) {
+		try {
+			await c.env.db.batch([
+				c.env.db.prepare(`
+					CREATE TABLE IF NOT EXISTS email_group (
+						group_id INTEGER PRIMARY KEY AUTOINCREMENT,
+						name TEXT NOT NULL,
+						color TEXT NOT NULL DEFAULT '',
+						user_id INTEGER NOT NULL DEFAULT 0,
+						create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+					)
+				`),
+				c.env.db.prepare(`CREATE INDEX IF NOT EXISTS idx_email_group_name ON email_group(name)`)
+			]);
+		} catch (e) {
+			console.warn(`跳过表：${e.message}`);
+		}
+
+		try {
+			await c.env.db.batch([
+				c.env.db.prepare(`ALTER TABLE email ADD COLUMN group_id INTEGER NOT NULL DEFAULT 0;`),
+				c.env.db.prepare(`CREATE INDEX IF NOT EXISTS idx_email_group_id ON email(group_id)`)
+			]);
+		} catch (e) {
+			console.warn(`跳过字段：${e.message}`);
+		}
+
+		try {
+			await c.env.db.prepare(`
+				INSERT INTO perm (perm_id, name, perm_key, pid, type, sort) VALUES
+				(37,'分组管理', NULL, 0, 1, 5.3),
+				(38,'分组查看', 'group:query', 37, 2, 0),
+				(39,'分组添加', 'group:add', 37, 2, 1),
+				(40,'分组删除', 'group:delete', 37, 2, 2)`).run();
+		} catch (e) {
+			console.warn(`跳过数据：${e.message}`);
+		}
+
+		try {
+			await c.env.db.prepare(`
+				INSERT INTO role_perm (role_id, perm_id) VALUES
+				(1, 38),
+				(1, 39),
+				(1, 40)`).run();
+		} catch (e) {
+			console.warn(`跳过数据：${e.message}`);
 		}
 	},
 

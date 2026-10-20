@@ -4,6 +4,7 @@ import { emailListColumns, emailBriefColumns, EMAIL_LIST_TEXT_LEN } from '../lib
 import { attConst, emailConst, isDel, settingConst } from '../const/entity-const';
 import { and, desc, eq, gt, inArray, notInArray, lt, count, asc, sql, ne, or, like, lte, gte, aliasedTable } from 'drizzle-orm';
 import { star } from '../entity/star';
+import group from '../entity/group';
 import settingService from './setting-service';
 import accountService from './account-service';
 import BizError from '../error/biz-error';
@@ -171,8 +172,12 @@ const emailService = {
 		return conditions;
 	},
 
-	allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, withCursor = true }) {
+	allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId, withCursor = true }) {
 		const conditions = [];
+
+		if (groupId) {
+			conditions.push(eq(email.groupId, Number(groupId)));
+		}
 
 		if (type === 'send') {
 			conditions.push(eq(email.type, emailConst.type.SEND));
@@ -897,7 +902,7 @@ const emailService = {
 
 	async allList(c, params) {
 
-		let { emailId, size, name, subject, accountEmail, userEmail, type, timeSort, full } = params;
+		let { emailId, size, name, subject, accountEmail, userEmail, type, timeSort, full, groupId } = params;
 
 		size = Number(size);
 		emailId = Number(emailId) || 0;
@@ -922,15 +927,17 @@ const emailService = {
 
 		full = full === 1;
 
-		const filters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort });
-		const countFilters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, withCursor: false });
+		const filters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId });
+		const countFilters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId, withCursor: false });
 		const columns = full ? emailListColumns : emailBriefColumns;
 		const assignedUser = aliasedTable(user, 'assigned_user');
+		const groupT = aliasedTable(group, 'email_group');
 
-		const query = orm(c).select({ ...columns, userEmail: user.email, assignedUserEmail: assignedUser.email })
+		const query = orm(c).select({ ...columns, userEmail: user.email, assignedUserEmail: assignedUser.email, groupName: groupT.name, groupColor: groupT.color })
 			.from(email)
 			.leftJoin(user, eq(email.userId, user.userId))
 			.leftJoin(assignedUser, eq(email.assignedUserId, assignedUser.userId))
+			.leftJoin(groupT, eq(email.groupId, groupT.groupId))
 			.where(and(...filters));
 
 		// count 不搜用户时无需 join user
@@ -939,10 +946,12 @@ const emailService = {
 				.from(email)
 				.leftJoin(user, eq(email.userId, user.userId))
 				.leftJoin(assignedUser, eq(email.assignedUserId, assignedUser.userId))
+				.leftJoin(groupT, eq(email.groupId, groupT.groupId))
 				.where(and(...countFilters))
 			: orm(c).select({ total: count() })
 				.from(email)
 				.leftJoin(assignedUser, eq(email.assignedUserId, assignedUser.userId))
+				.leftJoin(groupT, eq(email.groupId, groupT.groupId))
 				.where(and(...countFilters));
 
 		if (timeSort) {
@@ -1069,9 +1078,38 @@ const emailService = {
 			.where(inArray(email.emailId, emailIdList)).run();
 	},
 
+	// 将邮件归入指定分组（groupId=0 表示取消分组）
+	async setGroup(c, params) {
+		let { emailIds, groupId } = params;
+
+		const emailIdList = String(emailIds).split(',').map(Number).filter(Boolean);
+
+		if (emailIdList.length === 0) {
+			throw new BizError(t('emptyEmail'));
+		}
+
+		const gid = Number(groupId);
+
+		if (isNaN(gid) || gid < 0) {
+			throw new BizError(t('invalidGroup'));
+		}
+
+		// groupId > 0 时校验目标分组存在
+		if (gid > 0) {
+			const target = await orm(c).select({ groupId: group.groupId }).from(group)
+				.where(eq(group.groupId, gid)).get();
+			if (!target) {
+				throw new BizError(t('groupNotExist'));
+			}
+		}
+
+		await orm(c).update(email).set({ groupId: gid })
+			.where(inArray(email.emailId, emailIdList)).run();
+	},
+
 	// 我的邮件：列出分配给当前用户的邮件
 	async myList(c, params, userId) {
-		let { emailId, size, name, subject, accountEmail, userEmail, type, timeSort, full } = params;
+		let { emailId, size, name, subject, accountEmail, userEmail, type, timeSort, full, groupId } = params;
 
 		size = Number(size);
 		emailId = Number(emailId) || 0;
@@ -1096,8 +1134,8 @@ const emailService = {
 
 		full = full === 1;
 
-		const filters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort });
-		const countFilters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, withCursor: false });
+		const filters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId });
+		const countFilters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId, withCursor: false });
 
 		filters.push(eq(email.assignedUserId, userId));
 		countFilters.push(eq(email.assignedUserId, userId));
@@ -1109,18 +1147,21 @@ const emailService = {
 		}
 
 		const assignedUser = aliasedTable(user, 'assigned_user');
+		const groupT = aliasedTable(group, 'email_group');
 		const columns = full ? emailListColumns : emailBriefColumns;
 
-		const query = orm(c).select({ ...columns, userEmail: user.email, assignedUserEmail: assignedUser.email })
+		const query = orm(c).select({ ...columns, userEmail: user.email, assignedUserEmail: assignedUser.email, groupName: groupT.name, groupColor: groupT.color })
 			.from(email)
 			.leftJoin(user, eq(email.userId, user.userId))
 			.leftJoin(assignedUser, eq(email.assignedUserId, assignedUser.userId))
+			.leftJoin(groupT, eq(email.groupId, groupT.groupId))
 			.where(and(...filters));
 
 		const queryCount = orm(c).select({ total: count() })
 			.from(email)
 			.leftJoin(user, eq(email.userId, user.userId))
 			.leftJoin(assignedUser, eq(email.assignedUserId, assignedUser.userId))
+			.leftJoin(groupT, eq(email.groupId, groupT.groupId))
 			.where(and(...countFilters));
 
 		if (timeSort) {
