@@ -55,15 +55,6 @@
           <el-option key="4" :label="$t('selectDeleted')" value="delete"/>
           <el-option key="4" :label="$t('noRecipientTitle')" value="noone"/>
         </el-select>
-        <el-select v-model="params.groupId" :placeholder="$t('groupName')" class="group-select" clearable @change="search">
-          <el-option :key="0" :label="$t('allGroups')" :value="null"/>
-          <el-option v-for="g in groups" :key="g.groupId" :label="g.name" :value="g.groupId">
-            <span class="group-opt">
-              <span class="color-dot" :style="{ background: g.color || '#dcdfe6' }"></span>
-              <span :style="{ color: g.color || 'inherit' }">{{ g.name }}</span>
-            </span>
-          </el-option>
-        </el-select>
         <Icon class="icon" icon="iconoir:search" @click="search" width="20" height="20"/>
         <Icon class="icon" @click="changeTimeSort" icon="material-symbols-light:timer-arrow-down-outline"
               v-if="params.timeSort === 0" width="28" height="28"/>
@@ -194,7 +185,6 @@ const params = reactive({
   accountEmail: null,
   name: null,
   subject: null,
-  groupId: null,
   searchType: 'name'
 })
 
@@ -403,7 +393,6 @@ function refreshBefore() {
   params.accountEmail = null
   params.name = null
   params.subject = null
-  params.groupId = null
   params.searchType = 'name'
 }
 
@@ -615,15 +604,6 @@ async function latest() {
 .status-select {
   margin-bottom: 2px;
   width: 102px;
-
-  :deep(.el-select__wrapper) {
-    min-height: 28px;
-  }
-}
-
-.group-select {
-  margin-bottom: 2px;
-  width: 140px;
 
   :deep(.el-select__wrapper) {
     min-height: 28px;

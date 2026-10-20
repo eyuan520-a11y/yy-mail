@@ -111,20 +111,28 @@
                       </span>
                       <span>{{ item.type === 0 ? item.toEmail : item.sendEmail }}</span>
                     </div>
-                    <div class="assigned" v-if="showAssigned">
+                    <div class="assigned" v-if="showAssigned && isMobile">
                       <span>
                         <Icon icon="mynaui:user-check" width="18" height="18"/>
                       </span>
                       <span>{{ item.assignedUserEmail || t('unassigned') }}</span>
                     </div>
-                    <div class="group" v-if="showGroup && item.groupName">
+                    <div class="group" v-if="showGroup && isMobile">
                       <span>
                         <Icon icon="fluent:group-24-regular" width="18" height="18"/>
                       </span>
-                      <span :style="{ color: item.groupColor }">{{ item.groupName }}</span>
+                      <span :style="{ color: item.groupColor || 'inherit' }">{{ item.groupName || t('ungrouped') }}</span>
                     </div>
                   </div>
                 </div>
+              </div>
+              <div class="assigned-col" v-if="showAssigned && !isMobile" :class="{ unassigned: !item.assignedUserEmail }" :title="item.assignedUserEmail || t('unassigned')">
+                <Icon icon="mynaui:user-check" width="16" height="16"/>
+                <span class="col-value">{{ item.assignedUserEmail || t('unassigned') }}</span>
+              </div>
+              <div class="group-col" v-if="showGroup && !isMobile" :title="item.groupName || t('ungrouped')">
+                <Icon icon="fluent:group-24-regular" width="16" height="16" :style="{ color: item.groupColor || 'inherit' }"/>
+                <span class="col-value" :style="{ color: item.groupColor || 'inherit' }">{{ item.groupName || t('ungrouped') }}</span>
               </div>
               <div class="email-right" :style="showUserInfo ? 'align-self: start;':''">
                 <span class="email-time" :style="(item.unread === EmailUnreadEnum.UNREAD && showUnread) ? 'font-weight: bold' : ''">{{ item.formatCreateTime }}</span>
@@ -1314,6 +1322,47 @@ function loadData() {
     align-items: center;
     @media (max-width: 1366px) {
       display: none;
+    }
+  }
+
+  .assigned-col,
+  .group-col {
+    flex: 0 0 130px;
+    width: 130px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding-left: 15px;
+    font-size: 13px;
+    color: var(--email-scroll-content-color);
+    overflow: hidden;
+    white-space: nowrap;
+
+    .col-value {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    @media (max-width: 1366px) {
+      display: none;
+    }
+  }
+
+  .assigned-col {
+    color: var(--el-color-primary);
+
+    .col-value {
+      color: var(--el-color-primary);
+    }
+
+    &.unassigned {
+      color: var(--email-scroll-content-color);
+
+      .col-value {
+        color: var(--email-scroll-content-color);
+      }
     }
   }
 

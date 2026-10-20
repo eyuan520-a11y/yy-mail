@@ -370,6 +370,7 @@ const en = {
     groupSuccess: 'Grouped successfully',
     allGroups: 'All Groups',
     ungroup: 'Ungroup',
+    ungrouped: 'Ungrouped',
     emptyGroupName: 'Group name cannot be empty',
     myEmail: 'My Mail',
 }

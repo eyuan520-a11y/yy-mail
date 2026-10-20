@@ -370,6 +370,7 @@ const zh = {
     groupSuccess: '分组成功',
     allGroups: '全部分组',
     ungroup: '取消分组',
+    ungrouped: '未分组',
     emptyGroupName: '分组名称不能为空',
     myEmail: '我的邮件',
 }
