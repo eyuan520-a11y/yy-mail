@@ -175,8 +175,14 @@ const emailService = {
 	allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId, withCursor = true }) {
 		const conditions = [];
 
-		if (groupId) {
-			conditions.push(eq(email.groupId, Number(groupId)));
+		// 分组筛选：groupId 为空表示「全部」；为 0 表示「未分组」(group_id=0)；正整数表示具体分组
+		if (groupId !== undefined && groupId !== null && groupId !== '') {
+			const gid = Number(groupId);
+			if (gid > 0) {
+				conditions.push(eq(email.groupId, gid));
+			} else {
+				conditions.push(eq(email.groupId, 0));
+			}
 		}
 
 		if (type === 'send') {

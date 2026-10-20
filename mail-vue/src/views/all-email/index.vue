@@ -55,6 +55,16 @@
           <el-option key="4" :label="$t('selectDeleted')" value="delete"/>
           <el-option key="4" :label="$t('noRecipientTitle')" value="noone"/>
         </el-select>
+        <el-select v-model="params.groupId" :placeholder="$t('group')" class="group-search-select" @change="search">
+          <el-option :label="$t('all')" value=""/>
+          <el-option :label="$t('ungrouped')" :value="0"/>
+          <el-option v-for="g in groups" :key="g.groupId" :label="g.name" :value="g.groupId">
+            <span class="group-opt">
+              <span class="color-dot" :style="{ background: g.color || '#dcdfe6' }"></span>
+              <span :style="{ color: g.color || 'inherit' }">{{ g.name }}</span>
+            </span>
+          </el-option>
+        </el-select>
         <Icon class="icon" icon="iconoir:search" @click="search" width="20" height="20"/>
         <Icon class="icon" @click="changeTimeSort" icon="material-symbols-light:timer-arrow-down-outline"
               v-if="params.timeSort === 0" width="28" height="28"/>
@@ -185,7 +195,8 @@ const params = reactive({
   accountEmail: null,
   name: null,
   subject: null,
-  searchType: 'name'
+  searchType: 'name',
+  groupId: ''
 })
 
 const clearParams = reactive({
@@ -394,6 +405,7 @@ function refreshBefore() {
   params.name = null
   params.subject = null
   params.searchType = 'name'
+  params.groupId = ''
 }
 
 function search() {
@@ -604,6 +616,15 @@ async function latest() {
 .status-select {
   margin-bottom: 2px;
   width: 102px;
+
+  :deep(.el-select__wrapper) {
+    min-height: 28px;
+  }
+}
+
+.group-search-select {
+  margin-bottom: 2px;
+  width: 124px;
 
   :deep(.el-select__wrapper) {
     min-height: 28px;
