@@ -906,7 +906,7 @@ const emailService = {
 		return result;
 	},
 
-	async allList(c, params) {
+	async allList(c, params, userId) {
 
 		let { emailId, size, name, subject, accountEmail, userEmail, type, timeSort, full, groupId } = params;
 
@@ -939,11 +939,12 @@ const emailService = {
 		const assignedUser = aliasedTable(user, 'assigned_user');
 		const groupT = aliasedTable(group, 'email_group');
 
-		const query = orm(c).select({ ...columns, userEmail: user.email, assignedUserEmail: assignedUser.email, groupName: groupT.name, groupColor: groupT.color })
+		const query = orm(c).select({ ...columns, userEmail: user.email, assignedUserEmail: assignedUser.email, groupName: groupT.name, groupColor: groupT.color, starId: star.starId })
 			.from(email)
 			.leftJoin(user, eq(email.userId, user.userId))
 			.leftJoin(assignedUser, eq(email.assignedUserId, assignedUser.userId))
 			.leftJoin(groupT, eq(email.groupId, groupT.groupId))
+			.leftJoin(star, and(eq(star.emailId, email.emailId), eq(star.userId, userId)))
 			.where(and(...filters));
 
 		// count 不搜用户时无需 join user
@@ -977,6 +978,11 @@ const emailService = {
 			.orderBy(desc(email.emailId)).limit(1).get();
 
 		let [list, totalRow, latestEmail] = await Promise.all([listQuery, totalQuery, latestEmailQuery]);
+
+		list = list.map(item => ({
+			...item,
+			isStar: item.starId != null ? 1 : 0
+		}));
 
 		if (full) {
 			await this.emailAddAtt(c, list);
@@ -1156,11 +1162,12 @@ const emailService = {
 		const groupT = aliasedTable(group, 'email_group');
 		const columns = full ? emailListColumns : emailBriefColumns;
 
-		const query = orm(c).select({ ...columns, userEmail: user.email, assignedUserEmail: assignedUser.email, groupName: groupT.name, groupColor: groupT.color })
+		const query = orm(c).select({ ...columns, userEmail: user.email, assignedUserEmail: assignedUser.email, groupName: groupT.name, groupColor: groupT.color, starId: star.starId })
 			.from(email)
 			.leftJoin(user, eq(email.userId, user.userId))
 			.leftJoin(assignedUser, eq(email.assignedUserId, assignedUser.userId))
 			.leftJoin(groupT, eq(email.groupId, groupT.groupId))
+			.leftJoin(star, and(eq(star.emailId, email.emailId), eq(star.userId, userId)))
 			.where(and(...filters));
 
 		const queryCount = orm(c).select({ total: count() })
@@ -1187,6 +1194,11 @@ const emailService = {
 			.orderBy(desc(email.emailId)).limit(1).get();
 
 		let [list, totalRow, latestEmail] = await Promise.all([listQuery, totalQuery, latestEmailQuery]);
+
+		list = list.map(item => ({
+			...item,
+			isStar: item.starId != null ? 1 : 0
+		}));
 
 		if (full) {
 			await this.emailAddAtt(c, list);

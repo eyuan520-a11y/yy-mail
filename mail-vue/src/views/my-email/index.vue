@@ -3,7 +3,11 @@
     <emailScroll ref="sysEmailScroll"
                  :get-emailList="getEmailList"
                  :time-sort="params.timeSort"
-                 :show-star="false"
+                 :star-add="starAdd"
+                 :star-cancel="starCancel"
+                 :star-success="addStar"
+                 :cancel-success="cancelStar"
+                 :show-star="true"
                  show-user-info
                  show-group
                  actionLeft="4px"
@@ -72,6 +76,7 @@ import {useEmailStore} from "@/store/email.js";
 import {
   myEmailList
 } from "@/request/all-email.js";
+import {starAdd, starCancel} from "@/request/star.js";
 import {groupList} from "@/request/group.js";
 import {Icon} from "@iconify/vue";
 import router from "@/router/index.js";
@@ -184,6 +189,14 @@ function jumpContent(email) {
 
 function getEmailList(emailId, size) {
   return emailStore.fetchList(full => myEmailList({emailId, size, full, ...params}))
+}
+
+function addStar(email) {
+  emailStore.starScroll?.addItem(email)
+}
+
+function cancelStar(email) {
+  emailStore.starScroll?.deleteEmail([email.emailId])
 }
 
 </script>

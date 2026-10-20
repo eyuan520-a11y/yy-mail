@@ -5,7 +5,9 @@
                  :email-delete="allEmailDelete"
                  :star-add="starAdd"
                  :star-cancel="starCancel"
-                 :show-star="false"
+                 :star-success="addStar"
+                 :cancel-success="cancelStar"
+                 :show-star="true"
                  show-user-info
                  show-status
                  show-assigned
@@ -518,6 +520,14 @@ async function latest() {
     }
 
   }
+}
+
+function addStar(email) {
+  emailStore.starScroll?.addItem(email)
+}
+
+function cancelStar(email) {
+  emailStore.starScroll?.deleteEmail([email.emailId])
 }
 
 </script>
