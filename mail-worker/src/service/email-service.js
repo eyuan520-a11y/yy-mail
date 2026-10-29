@@ -172,7 +172,7 @@ const emailService = {
 		return conditions;
 	},
 
-	allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId, withCursor = true }) {
+	allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId, content, withCursor = true }) {
 		const conditions = [];
 
 		// 分组筛选：groupId 为空表示「全部」；为 0 表示「未分组」(group_id=0)；正整数表示具体分组
@@ -220,6 +220,17 @@ const emailService = {
 
 		if (subject) {
 			conditions.push(sql`${email.subject} COLLATE NOCASE LIKE ${subject + '%'}`);
+		}
+
+		// 内容搜索：正文可能是纯文本(text)或 HTML(content)，两者 OR 匹配；用子串 %kw% 而非前缀
+		if (content) {
+			const kw = '%' + content + '%';
+			conditions.push(
+				or(
+					sql`${email.text} COLLATE NOCASE LIKE ${kw}`,
+					sql`${email.content} COLLATE NOCASE LIKE ${kw}`
+				)
+			);
 		}
 
 		if (withCursor && emailId) {
@@ -908,7 +919,7 @@ const emailService = {
 
 	async allList(c, params, userId) {
 
-		let { emailId, size, name, subject, accountEmail, userEmail, type, timeSort, full, groupId } = params;
+		let { emailId, size, name, subject, accountEmail, userEmail, type, timeSort, full, groupId, content } = params;
 
 		size = Number(size);
 		emailId = Number(emailId) || 0;
@@ -933,8 +944,8 @@ const emailService = {
 
 		full = full === 1;
 
-		const filters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId });
-		const countFilters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId, withCursor: false });
+		const filters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId, content });
+		const countFilters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId, content, withCursor: false });
 		const columns = full ? emailListColumns : emailBriefColumns;
 		const assignedUser = aliasedTable(user, 'assigned_user');
 		const groupT = aliasedTable(group, 'email_group');
@@ -1121,7 +1132,7 @@ const emailService = {
 
 	// 我的邮件：列出分配给当前用户的邮件
 	async myList(c, params, userId) {
-		let { emailId, size, name, subject, accountEmail, userEmail, type, timeSort, full, groupId } = params;
+		let { emailId, size, name, subject, accountEmail, userEmail, type, timeSort, full, groupId, content } = params;
 
 		size = Number(size);
 		emailId = Number(emailId) || 0;
@@ -1146,8 +1157,8 @@ const emailService = {
 
 		full = full === 1;
 
-		const filters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId });
-		const countFilters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId, withCursor: false });
+		const filters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId, content });
+		const countFilters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, groupId, content, withCursor: false });
 
 		filters.push(eq(email.assignedUserId, userId));
 		countFilters.push(eq(email.assignedUserId, userId));
